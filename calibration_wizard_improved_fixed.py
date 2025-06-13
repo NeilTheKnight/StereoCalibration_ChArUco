@@ -103,8 +103,8 @@ class ImprovedCalibrationWizard:
             'min_successful_pairs': 5,
             'max_acceptable_error': 2.0,
             'draw_detections': True,
-            'image_width': 1600,    # Updated for 4:3 aspect ratio
-            'image_height': 1200    # Updated for 4:3 aspect ratio
+            'image_width': 1920,    # Updated for 16:9 aspect ratio
+            'image_height': 1080    # Updated for 16:9 aspect ratio
         }
 
         self.left_dir = None
@@ -177,6 +177,20 @@ class ImprovedCalibrationWizard:
                     print(f"Error: Invalid dictionary name: {args.dictionary}")
                     return False
 
+            # Handle image width and height arguments with validation
+            # Note: argparse converts --image-width to image_width attribute
+            if hasattr(args, 'image_width') and args.image_width is not None:
+                if args.image_width <= 0:
+                    print(f"Error: Image width must be a positive integer, got {args.image_width}")
+                    return False
+                self.config['image_width'] = args.image_width
+
+            if hasattr(args, 'image_height') and args.image_height is not None:
+                if args.image_height <= 0:
+                    print(f"Error: Image height must be a positive integer, got {args.image_height}")
+                    return False
+                self.config['image_height'] = args.image_height
+
             # Set input and output directories
             if args.input_dir:
                 input_dir = args.input_dir
@@ -228,6 +242,7 @@ class ImprovedCalibrationWizard:
         print(f"  Marker size: {self.config['marker_length']*1000:.1f}mm")
         print(f"  Dictionary: {args.dictionary if args and args.dictionary else 'DICT_6X6_250'}")
         print(f"  Baseline: {self.config['baseline']*1000:.1f}mm")
+        print(f"  Image dimensions: {self.config['image_width']}×{self.config['image_height']} pixels")
         print(f"  Input directory: {input_dir}")
         print(f"  Output directory: {self.output_dir}")
 
@@ -433,7 +448,7 @@ class ImprovedCalibrationWizard:
             raise ValueError(f"No valid points found for {camera_name} camera calibration")
 
         # Better initial camera matrix guess based on typical camera parameters
-        # For 1600x1200 resolution, use more realistic focal length estimate
+        # Use realistic focal length estimate based on image dimensions
         # Based on typical camera setups, focal length should be around 0.8-1.2 * image_width
         fx = self.config['image_width'] * 0.8  # Conservative but realistic estimate
         fy = fx  # Assume square pixels (aspect ratio = 1)
@@ -1095,6 +1110,8 @@ def main():
                                 'DICT_6X6_50', 'DICT_6X6_100', 'DICT_6X6_250', 'DICT_6X6_1000',
                                 'DICT_7X7_50', 'DICT_7X7_100', 'DICT_7X7_250', 'DICT_7X7_1000'],
                         help='ArUco dictionary to use (default: DICT_6X6_250)')
+    parser.add_argument('--image-width', type=int, help='Image width in pixels (default: 1920)')
+    parser.add_argument('--image-height', type=int, help='Image height in pixels (default: 1080)')
 
     args = parser.parse_args()
 
